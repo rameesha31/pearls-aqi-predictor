@@ -4,3 +4,4 @@ hopsworks
 pandas
 confluent-kafka
 delta-spark
+pyarrow
