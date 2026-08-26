@@ -5,3 +5,6 @@ pandas
 confluent-kafka
 delta-spark
 pyarrow
+scikit-learn
+numpy
+joblib
