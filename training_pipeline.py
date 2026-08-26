@@ -2,6 +2,7 @@ import os
 import hopsworks
 import pandas as pd
 import numpy as np
+import joblib
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
@@ -13,7 +14,7 @@ load_dotenv()
 def load_data():
     project = hopsworks.login(api_key_value=os.getenv("HOPSWORKS_API_KEY"))
     fs = project.get_feature_store()
-    fg = fs.get_feature_group("aqi_features", version=1)
+    fg = fs.get_feature_group("aqi_features", version=3)
     df = fg.read(read_options={"use_hive": True})
     return df
 
@@ -42,7 +43,7 @@ def prepare_data(df, horizon_hours=24):
     # Time ke hisaab se sort karo
     df = df.sort_values("timestamp").reset_index(drop=True)
 
-    feature_cols = ["pm2_5", "pm10", "no2", "o3", "co", "so2", "nh3",
+    feature_cols = ["pm2_5", "pm10", "no2", "o3", "co", "so2",
                      "hour", "day_of_week", "month",
                      "temperature", "humidity", "wind_speed"]
 
@@ -94,6 +95,22 @@ def train_and_evaluate(X_train, X_test, y_train, y_test):
         print(f"{name}: RMSE={res['rmse']:.3f}, MAE={res['mae']:.3f}, R2={res['r2']:.3f}")
 
     return results
+# ---- Step 4: Save Best Model to Registry ----
+def save_model_to_registry(rf_model, X_train):
+    project = hopsworks.login(api_key_value=os.getenv("HOPSWORKS_API_KEY"))
+    mr = project.get_model_registry()
+
+    # Save model file locally first
+    os.makedirs("model_dir", exist_ok=True)
+    joblib.dump(rf_model, "model_dir/rf_model.pkl")
+
+    # Register in Hopsworks Model Registry
+    model = mr.python.create_model(
+        name="aqi_predictor",
+        description="Random Forest model for 24-hour AQI forecasting"
+    )
+    model.save("model_dir")
+    print("Model saved to registry!")
 
 # ---- Main ----
 if __name__ == "__main__":
@@ -103,3 +120,6 @@ if __name__ == "__main__":
 
     X_train, X_test, y_train, y_test, feature_cols = prepare_data(df, horizon_hours=24)
     results = train_and_evaluate(X_train, X_test, y_train, y_test)
+    
+    # Save the Random Forest model (better performer)
+    save_model_to_registry(results["RandomForest"]["model"], X_train)
