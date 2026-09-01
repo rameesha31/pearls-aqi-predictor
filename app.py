@@ -6,7 +6,8 @@ import hopsworks
 from dotenv import load_dotenv
 
 load_dotenv()
-print("CWD:", os.getcwd())
+
+USE_LIVE_HOPSWORKS = True 
 st.set_page_config(page_title="AQI Dashboard", page_icon="🌫️", layout="wide")
 
 # ---- Custom styling ----
@@ -138,36 +139,40 @@ st.markdown(
 
 @st.cache_data(ttl=1800)
 def load_data():
-    try:
-        project = hopsworks.login(api_key_value=os.getenv("HOPSWORKS_API_KEY"))
-        fs = project.get_feature_store()
-        fg = fs.get_feature_group("aqi_features", version=3)
-        df = fg.read(read_options={"use_hive": True})
-        df = df.sort_values("timestamp").reset_index(drop=True)
-        return df, "live"
-    except Exception as e:
-        # Fallback to local snapshot if Hopsworks is unavailable
-        df = pd.read_csv("data_snapshot.csv", parse_dates=["timestamp"])
-        df = df.sort_values("timestamp").reset_index(drop=True)
-        return df, "cached"
+    if USE_LIVE_HOPSWORKS:
+        try:
+            project = hopsworks.login(api_key_value=os.getenv("HOPSWORKS_API_KEY"))
+            fs = project.get_feature_store()
+            fg = fs.get_feature_group("aqi_features", version=3)
+            df = fg.read(read_options={"use_hive": True})
+            df = df.sort_values("timestamp").reset_index(drop=True)
+            return df, "live"
+        except Exception:
+            pass  # fall through to cached version
+
+    df = pd.read_csv("data_snapshot.csv", parse_dates=["timestamp"])
+    df = df.sort_values("timestamp").reset_index(drop=True)
+    return df, "cached"
 
 @st.cache_resource
 def load_models():
-    try:
-        project = hopsworks.login(api_key_value=os.getenv("HOPSWORKS_API_KEY"))
-        mr = project.get_model_registry()
-        models = {}
-        for label in ["24h", "48h", "72h"]:
-            model_obj = mr.get_model(f"aqi_predictor_{label}", version=1)
-            model_dir = model_obj.download()
-            models[label] = joblib.load(os.path.join(model_dir, f"rf_{label}.pkl"))
-        return models, "live"
-    except Exception as e:
-        # Fallback to local models if Hopsworks is unavailable
-        models = {}
-        for label in ["24h", "48h", "72h"]:
-            models[label] = joblib.load(f"models/rf_{label}.pkl")
-        return models, "cached"
+    if USE_LIVE_HOPSWORKS:
+        try:
+            project = hopsworks.login(api_key_value=os.getenv("HOPSWORKS_API_KEY"))
+            mr = project.get_model_registry()
+            models = {}
+            for label in ["24h", "48h", "72h"]:
+                model_obj = mr.get_model(f"aqi_predictor_{label}", version=1)
+                model_dir = model_obj.download()
+                models[label] = joblib.load(os.path.join(model_dir, f"rf_{label}.pkl"))
+            return models, "live"
+        except Exception:
+            pass  # fall through to cached version
+
+    models = {}
+    for label in ["24h", "48h", "72h"]:
+        models[label] = joblib.load(f"models/rf_{label}.pkl")
+    return models, "cached"
 
 def aqi_category(aqi):
     if aqi <= 50:
