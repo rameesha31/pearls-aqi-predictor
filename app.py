@@ -7,62 +7,134 @@ from dotenv import load_dotenv
 
 load_dotenv()
 print("CWD:", os.getcwd())
-print("KEY FOUND:", repr(os.getenv("HOPSWORKS_API_KEY")))
-
 st.set_page_config(page_title="AQI Dashboard", page_icon="🌫️", layout="wide")
 
 # ---- Custom styling ----
 st.markdown("""
     <style>
-    .stApp {
-        background-color: #ffffff;
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
     }
+
+    .stApp {
+        background: #ffffff;
+    }
+
+    /* ---- Force the built-in Streamlit top toolbar to white ---- */
+    header[data-testid="stHeader"] {
+        background-color: #ffffff !important;
+    }
+    div[data-testid="stToolbar"] {
+        background-color: #ffffff !important;
+    }
+    div[data-testid="stDecoration"] {
+        background: #ffffff !important;
+    }
+
     * {
         color: #111827;
     }
+
+    /* ---- Header banner ---- */
+    .header-banner {
+        background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 50%, #22c55e 100%);
+        border-radius: 1.1rem;
+        padding: 1.8rem 2rem;
+        margin-bottom: 1.6rem;
+        box-shadow: 0 8px 24px rgba(14, 165, 233, 0.25);
+    }
     .main-header {
-        font-size: 2.3rem;
+        font-family: 'Poppins', sans-serif;
+        font-size: 2.4rem;
         font-weight: 800;
-        color: #0f172a;
+        color: #ffffff !important;
         margin-bottom: 0.2rem;
     }
     .sub-header {
-        color: #475569;
+        color: #f1f5f9 !important;
         font-size: 1.05rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 0;
+        font-weight: 500;
     }
+
+    /* ---- Metric cards ---- */
     div[data-testid="stMetric"] {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 0.7rem;
-        padding: 1rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        background: linear-gradient(160deg, #ffffff 0%, #ecfeff 100%);
+        border: 1px solid #a5f3fc;
+        border-left: 5px solid #0ea5e9;
+        border-radius: 0.9rem;
+        padding: 1.1rem 1.2rem;
+        box-shadow: 0 2px 10px rgba(14, 165, 233, 0.08);
+        transition: transform 0.15s ease;
+    }
+    div[data-testid="stMetric"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(14, 165, 233, 0.15);
     }
     div[data-testid="stMetricLabel"] {
-        color: #475569 !important;
-        font-weight: 600;
+        color: #0369a1 !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.02em;
     }
     div[data-testid="stMetricValue"] {
-        color: #0f172a !important;
+        color: #1e1b4b !important;
+        font-family: 'Poppins', sans-serif;
     }
+
     h1, h2, h3, h4, h5 {
-        color: #0f172a !important;
+        font-family: 'Poppins', sans-serif;
+        color: #1e1b4b !important;
     }
     p, span, label, .stMarkdown {
         color: #1e293b;
     }
+
+    /* ---- Tabs ---- */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 6px;
+        border-bottom: 1px solid #e2e8f0;
+    }
     .stTabs [data-baseweb="tab"] {
         font-weight: 600;
-        color: #475569;
+        color: #6b7280;
+        padding: 0.5rem 1rem;
     }
     .stTabs [aria-selected="true"] {
-        color: #2563eb !important;
+        color: #0ea5e9 !important;
+    }
+    .stTabs [data-baseweb="tab-highlight"] {
+        background-color: #0ea5e9 !important;
+    }
+
+    /* ---- Expander & misc containers ---- */
+    div[data-testid="stExpander"] {
+        border: 1px solid #ede9fe;
+        border-radius: 0.8rem;
+        overflow: hidden;
+    }
+
+    /* ---- Alert boxes get rounder corners ---- */
+    div[data-testid="stAlert"] {
+        border-radius: 0.8rem;
+    }
+
+    hr {
+        border-color: #ede9fe;
     }
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<p class="main-header">🌫️ AQI Forecast Dashboard</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-header">Real-time air quality monitoring and 3-day forecasting for Lahore</p>', unsafe_allow_html=True)
+st.markdown(
+    """
+    <div class="header-banner">
+        <p class="main-header">🌫️ AQI Forecast Dashboard</p>
+        <p class="sub-header">Real-time air quality monitoring and 3-day forecasting for Lahore</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 @st.cache_data(ttl=1800)
 def load_data():
@@ -119,13 +191,26 @@ df, data_source = load_data()
 models, model_source = load_models()
 
 if data_source == "cached" or model_source == "cached":
-    st.caption("⚠️ Showing cached data — live connection to Hopsworks is temporarily unavailable.")
+    st.markdown(
+        """<div style="background:#fff7ed; border:1px solid #fed7aa; border-left:4px solid #ea580c;
+        border-radius:0.6rem; padding:0.6rem 1rem; margin-bottom:1rem;">
+        <span style="color:#9a3412; font-weight:600;">⚠️ Showing cached data — live connection to Hopsworks is temporarily unavailable.</span>
+        </div>""",
+        unsafe_allow_html=True
+    )
 else:
-    st.caption("✅ Connected to live Hopsworks Feature Store")
+    st.markdown(
+        """<div style="background:#f0fdf4; border:1px solid #bbf7d0; border-left:4px solid #16a34a;
+        border-radius:0.6rem; padding:0.6rem 1rem; margin-bottom:1rem;">
+        <span style="color:#166534; font-weight:600;">Connected to live Hopsworks Feature Store</span>
+        </div>""",
+        unsafe_allow_html=True
+    )
+
 latest = df.iloc[-1]
 category, color = aqi_category(latest["aqi"])
 
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Overview", "🔮 3-Day Forecast", "📈 Historical Trends", "🧠 Model Insights"])
+tab1, tab2, tab3, tab4 = st.tabs(["Overview", "3-Day Forecast", "Historical Trends", "Model Insights"])
 
 # ============ TAB 1: OVERVIEW ============
 with tab1:
@@ -136,22 +221,22 @@ with tab1:
     col4.metric("Humidity", f"{latest['humidity']:.0f}%")
 
     st.markdown(
-        f"""<div style="padding: 1rem; border-radius: 0.6rem; background-color: {color}15;
-        border-left: 5px solid {color}; margin-top: 0.5rem;">
+        f"""<div style="padding: 1.1rem 1.3rem; border-radius: 0.9rem; background: linear-gradient(135deg, {color}18, {color}08);
+        border-left: 5px solid {color}; margin-top: 0.8rem; box-shadow: 0 2px 8px {color}15;">
         <h3 style="color: {color} !important; margin: 0;">Air Quality: {category}</h3></div>""",
         unsafe_allow_html=True
     )
     st.write("")
     if latest["aqi"] > 150:
-        st.error(f"⚠️ Air quality is currently **{category}**. Consider limiting outdoor activity.")
+        st.error(f"Air quality is currently **{category}**. Consider limiting outdoor activity.")
     elif latest["aqi"] > 100:
-        st.warning(f"⚠️ Air quality is **{category}**. Sensitive groups should take precautions.")
+        st.warning(f"Air quality is **{category}**. Sensitive groups should take precautions.")
     else:
-        st.success(f"✅ Air quality is **{category}**.")
+        st.success(f"Air quality is **{category}**.")
 
     st.subheader("Current Pollutant Levels")
     pollutant_cols = ["pm2_5", "pm10", "no2", "o3", "co", "so2"]
-    st.bar_chart(latest[pollutant_cols], color="#2563eb")
+    st.bar_chart(latest[pollutant_cols], color="#0ea5e9")
     st.caption(f"Last updated: {latest['timestamp']}")
 
 # ============ TAB 2: 3-DAY FORECAST ============
@@ -169,9 +254,9 @@ with tab2:
         with col:
             st.markdown(f"#### {day_label}")
             st.markdown(
-                f"""<div style="padding: 1.3rem; border-radius: 0.7rem; background-color: {pred_color}12;
-                border: 1.5px solid {pred_color}55; text-align: center;">
-                <h1 style="color: {pred_color} !important; margin: 0; font-size: 2.5rem;">{int(pred)}</h1>
+                f"""<div style="padding: 1.4rem; border-radius: 1rem; background: linear-gradient(160deg, {pred_color}14, {pred_color}05);
+                border: 1.5px solid {pred_color}55; text-align: center; box-shadow: 0 4px 14px {pred_color}18;">
+                <h1 style="color: {pred_color} !important; margin: 0; font-size: 2.6rem; font-family:'Poppins',sans-serif;">{int(pred)}</h1>
                 <p style="color: {pred_color} !important; margin: 0.3rem 0 0 0; font-weight: 700;">{pred_cat}</p>
                 </div>""",
                 unsafe_allow_html=True
@@ -182,7 +267,7 @@ with tab2:
 # ============ TAB 3: HISTORICAL TRENDS ============
 with tab3:
     st.subheader("AQI Trend (Last 7 Days)")
-    st.line_chart(df.set_index("timestamp")["aqi"].tail(168), color="#2563eb")
+    st.line_chart(df.set_index("timestamp")["aqi"].tail(168), color="#14b8a6")
 
     st.subheader("Full Historical Trend")
     if os.path.exists("eda_outputs/1_aqi_trend.png"):
