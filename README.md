@@ -1,4 +1,4 @@
-🌫️ Pearls AQI Predictor
+Pearls AQI Predictor
 
 An end-to-end, serverless machine learning system that predicts the Air Quality Index (AQI) for Lahore, Pakistan, up to 3 days ahead. It automatically collects weather and pollution data, engineers features, trains models, and serves live forecasts through an interactive dashboard.
 
