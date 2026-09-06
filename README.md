@@ -1,3 +1,4 @@
+📄 **[Full Project Report](Project_Report_Rameesha.docx)**
 # Pearls AQI Predictor
 
 A serverless machine learning system that predicts Lahore's Air Quality Index (AQI) up to 3 days ahead. It automatically collects live weather and pollution data, engineers features, stores them in a feature store, trains models, and serves live forecasts through an interactive dashboard with no servers to manage.
