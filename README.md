@@ -1,12 +1,8 @@
 # Pearls AQI Predictor
 
-A serverless machine learning system that predicts Lahore's Air Quality Index (AQI) up to 3 days ahead. It automatically collects live weather and pollution data, engineers features, stores them in a feature store, trains models, and serves live forecasts through an interactive dashboard — with no servers to manage.
+A serverless machine learning system that predicts Lahore's Air Quality Index (AQI) up to 3 days ahead. It automatically collects live weather and pollution data, engineers features, stores them in a feature store, trains models, and serves live forecasts through an interactive dashboard with no servers to manage.
 
 **Live app:** https://pearls-aqi-predictor-lahore.streamlit.app/
-
-**How it works:** Open-Meteo (data source) → Hopsworks (feature store + model registry) → scikit-learn (Ridge Regression + Random Forest) → SHAP (explainability) → GitHub Actions (automation) → Streamlit (dashboard)
-
-Three separate Random Forest models are trained — one each for 24h, 48h, and 72h ahead — so the dashboard shows a genuine Day 1 / Day 2 / Day 3 forecast, not just the current reading.
 
 ---
 
@@ -15,7 +11,6 @@ Three separate Random Forest models are trained — one each for 24h, 48h, and 7
 **1. Requirements**
 - Python 3.11 (important — the `hopsworks` package doesn't install on Python 3.14+)
 - A free Hopsworks account: https://app.hopsworks.ai
-- Windows only: [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (needed by a couple of Hopsworks' dependencies)
 
 **2. Clone and install**
 ```bash
@@ -59,7 +54,6 @@ Then run the dashboard:
 streamlit run app.py
 ```
 
-By default the dashboard reads from the local `data_snapshot.csv` and `models/` folder — fast, and doesn't use any Hopsworks quota. Set `USE_LIVE_HOPSWORKS = True` at the top of `app.py` if you want it to try Hopsworks first; it will still fall back to the local files automatically if that connection fails.
 
 ---
 
